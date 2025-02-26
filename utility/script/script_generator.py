@@ -1,68 +1,61 @@
-from groq import Groq
 import os
-import edge_tts
+from openai import OpenAI
 import json
-import asyncio
-import whisper_timestamped as whisper
-from utility.script.script_generator import generate_script
-from utility.audio.audio_generator import generate_audio
-from utility.captions.timed_captions_generator import generate_timed_captions
-from utility.video.background_video_generator import generate_video_url
-from utility.render.render_engine import get_output_media
-from utility.video.video_search_query_generator import getVideoSearchQueriesTimed, merge_empty_intervals
-import argparse
 
-# Initialize Groq client
-groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+if len(os.environ.get("GROQ_API_KEY")) > 30:
+    from groq import Groq
+    model = "mixtral-8x7b-32768"
+    client = Groq(
+        api_key=os.environ.get("GROQ_API_KEY"),
+        )
+else:
+    OPENAI_API_KEY = os.getenv('OPENAI_KEY')
+    model = "gpt-4o"
+    client = OpenAI(api_key=OPENAI_API_KEY)
 
-def generate_topic():
-    """Generate a random topic using Groq's LLM (e.g., Mixtral or LLaMA)"""
-    response = groq_client.chat.completions.create(
-        messages=[{"role": "user", "content": "Generate a random interesting topic for a short video."}],
-        model="mixtral-8x7b-32768",  # Or "llama2-70b-4096"
-        temperature=0.7,
-        max_tokens=50
+def generate_script(topic):
+    prompt = (
+        """You are a seasoned content writer for a YouTube Shorts channel, specializing in facts videos. 
+        Your facts shorts are concise, each lasting less than 50 seconds (approximately 140 words). 
+        They are incredibly engaging and original. When a user requests a specific type of facts short, you will create it.
+
+        For instance, if the user asks for:
+        Weird facts
+        You would produce content like this:
+
+        Weird facts you don't know:
+        - Bananas are berries, but strawberries aren't.
+        - A single cloud can weigh over a million pounds.
+        - There's a species of jellyfish that is biologically immortal.
+        - Honey never spoils; archaeologists have found pots of honey in ancient Egyptian tombs that are over 3,000 years old and still edible.
+        - The shortest war in history was between Britain and Zanzibar on August 27, 1896. Zanzibar surrendered after 38 minutes.
+        - Octopuses have three hearts and blue blood.
+
+        You are now tasked with creating the best short script based on the user's requested type of 'facts'.
+
+        Keep it brief, highly interesting, and unique.
+
+        Stictly output the script in a JSON format like below, and only provide a parsable JSON object with the key 'script'.
+
+        # Output
+        {"script": "Here is the script ..."}
+        """
     )
-    return response.choices[0].message.content.strip()
 
-if __name__ == "__main__":
-    # Remove argparse for topic input
-    # Always generate a topic using AI
-    SAMPLE_TOPIC = generate_topic()
-    SAMPLE_FILE_NAME = "audio_tts.wav"
-    VIDEO_SERVER = "pexel"
-
-    print(f"Generated Topic: {SAMPLE_TOPIC}")
-
-    # Step 1: Generate script
-    response = generate_script(SAMPLE_TOPIC)
-    print("Script:", response)
-
-    # Step 2: Generate audio from script
-    asyncio.run(generate_audio(response, SAMPLE_FILE_NAME))
-
-    # Step 3: Generate timed captions from audio
-    timed_captions = generate_timed_captions(SAMPLE_FILE_NAME)
-    print("Captions:", timed_captions)
-
-    # Step 4: Generate search terms for background videos
-    search_terms = getVideoSearchQueriesTimed(response, timed_captions)
-    print("Search Terms:", search_terms)
-
-    # Step 5: Fetch background video URLs
-    background_video_urls = None
-    if search_terms:
-        background_video_urls = generate_video_url(search_terms, VIDEO_SERVER)
-        print("Video URLs:", background_video_urls)
-    else:
-        print("No background video")
-
-    # Step 6: Merge empty intervals in video URLs
-    background_video_urls = merge_empty_intervals(background_video_urls)
-
-    # Step 7: Render final video
-    if background_video_urls:
-        video = get_output_media(SAMPLE_FILE_NAME, timed_captions, background_video_urls, VIDEO_SERVER)
-        print("Output Video:", video)
-    else:
-        print("No video generated")
+    response = client.chat.completions.create(
+            model=model,
+            messages=[
+                {"role": "system", "content": prompt},
+                {"role": "user", "content": topic}
+            ]
+        )
+    content = response.choices[0].message.content
+    try:
+        script = json.loads(content)["script"]
+    except Exception as e:
+        json_start_index = content.find('{')
+        json_end_index = content.rfind('}')
+        print(content)
+        content = content[json_start_index:json_end_index+1]
+        script = json.loads(content)["script"]
+    return script
