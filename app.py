@@ -1,4 +1,4 @@
-from openai import OpenAI
+from groq import Groq
 import os
 import edge_tts
 import json
@@ -12,51 +12,53 @@ from utility.render.render_engine import get_output_media
 from utility.video.video_search_query_generator import getVideoSearchQueriesTimed, merge_empty_intervals
 import argparse
 
-# Initialize OpenAI client
-openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+# Initialize Groq client
+groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 def generate_topic():
-    response = openai_client.Completion.create(
-        model="text-davinci-003",
-        prompt="Generate a random interesting topic for a video.",
-        max_tokens=50,
-        temperature=0.7
+    """Generate a random topic using Groq's LLM (e.g., Mixtral or LLaMA)"""
+    response = groq_client.chat.completions.create(
+        messages=[{"role": "user", "content": "Generate a random interesting topic for a short video."}],
+        model="mixtral-8x7b-32768",  # Or "llama2-70b-4096"
+        temperature=0.7,
+        max_tokens=50
     )
-    return response.choices[0].text.strip()
+    return response.choices[0].message.content.strip()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate a video from a topic.")
-    parser.add_argument("--topic", type=str, help="The topic for the video", default=None)
-
+    parser.add_argument("--topic", type=str, help="(Optional) Custom topic for the video", default=None)
+    
     args = parser.parse_args()
     SAMPLE_TOPIC = args.topic if args.topic else generate_topic()
     SAMPLE_FILE_NAME = "audio_tts.wav"
     VIDEO_SERVER = "pexel"
 
-    print(f"Generated Topic: {SAMPLE_TOPIC}")
+    print(f"Using Topic: {SAMPLE_TOPIC}")
 
+    # Rest of your pipeline remains unchanged
     response = generate_script(SAMPLE_TOPIC)
-    print("script: {}".format(response))
+    print("Script:", response)
 
     asyncio.run(generate_audio(response, SAMPLE_FILE_NAME))
 
     timed_captions = generate_timed_captions(SAMPLE_FILE_NAME)
-    print(timed_captions)
+    print("Captions:", timed_captions)
 
     search_terms = getVideoSearchQueriesTimed(response, timed_captions)
-    print(search_terms)
+    print("Search Terms:", search_terms)
 
     background_video_urls = None
-    if search_terms is not None:
+    if search_terms:
         background_video_urls = generate_video_url(search_terms, VIDEO_SERVER)
-        print(background_video_urls)
+        print("Video URLs:", background_video_urls)
     else:
         print("No background video")
 
     background_video_urls = merge_empty_intervals(background_video_urls)
 
-    if background_video_urls is not None:
+    if background_video_urls:
         video = get_output_media(SAMPLE_FILE_NAME, timed_captions, background_video_urls, VIDEO_SERVER)
-        print(video)
+        print("Output Video:", video)
     else:
-        print("No video")
+        print("No video generated")
