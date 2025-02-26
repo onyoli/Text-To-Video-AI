@@ -26,19 +26,13 @@ def generate_topic():
     return response.choices[0].message.content.strip()
 
 if __name__ == "__main__":
-    # Set up argument parser
-    parser = argparse.ArgumentParser(description="Generate a video from a topic.")
-    parser.add_argument("--topic", type=str, help="(Optional) Custom topic for the video", default=None)
-    
-    # Parse arguments
-    args = parser.parse_args()
-    
-    # Use provided topic or generate one automatically
-    SAMPLE_TOPIC = args.topic if args.topic else generate_topic()
+    # Remove argparse for topic input
+    # Always generate a topic using AI
+    SAMPLE_TOPIC = generate_topic()
     SAMPLE_FILE_NAME = "audio_tts.wav"
     VIDEO_SERVER = "pexel"
 
-    print(f"Using Topic: {SAMPLE_TOPIC}")
+    print(f"Generated Topic: {SAMPLE_TOPIC}")
 
     # Step 1: Generate script
     response = generate_script(SAMPLE_TOPIC)
