@@ -10,7 +10,6 @@ from utility.captions.timed_captions_generator import generate_timed_captions
 from utility.video.background_video_generator import generate_video_url
 from utility.render.render_engine import get_output_media
 from utility.video.video_search_query_generator import getVideoSearchQueriesTimed, merge_empty_intervals
-import argparse
 
 # Initialize Groq client
 groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
@@ -26,19 +25,12 @@ def generate_topic():
     return response.choices[0].message.content.strip()
 
 if __name__ == "__main__":
-    # Set up argument parser
-    parser = argparse.ArgumentParser(description="Generate a video from a topic.")
-    parser.add_argument("--topic", type=str, help="(Optional) Custom topic for the video", default=None)
-    
-    # Parse arguments
-    args = parser.parse_args()
-    
-    # Use provided topic or generate one automatically
-    SAMPLE_TOPIC = args.topic if args.topic else generate_topic()
+    # Always generate a topic using AI
+    SAMPLE_TOPIC = generate_topic()
     SAMPLE_FILE_NAME = "audio_tts.wav"
     VIDEO_SERVER = "pexel"
 
-    print(f"Using Topic: {SAMPLE_TOPIC}")
+    print(f"Generated Topic: {SAMPLE_TOPIC}")
 
     # Step 1: Generate script
     response = generate_script(SAMPLE_TOPIC)
