@@ -4,10 +4,10 @@ import os
 # Add the root directory to the Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from openai import OpenAI
-import json
-import re
-from datetime import datetime
+# Debug: Print Python path
+print("Python Path:", sys.path)
+
+# Import the utility module
 from utility.utils import log_response, LOG_TYPE_GPT
 
 # Debug print statement
