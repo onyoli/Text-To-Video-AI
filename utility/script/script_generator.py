@@ -1,8 +1,8 @@
 import os
 import json
-from openai import OpenAI  # Moved to top for clarity
+from openai import OpenAI
 
-# Initialize client outside function to avoid repeated setup
+# Initialize client
 if len(os.environ.get("GROQ_API_KEY", "")) > 30:
     from groq import Groq
     client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
@@ -12,8 +12,8 @@ else:
     model = "gpt-4o"
 
 def generate_script(topic):
-    prompt = """[Your existing prompt here]"""  # Keep your original prompt
-    
+    prompt = """[Your prompt here]"""  # Keep your existing prompt
+
     response = client.chat.completions.create(
         model=model,
         messages=[
@@ -21,8 +21,6 @@ def generate_script(topic):
             {"role": "user", "content": topic}
         ]
     )
-    
-    # Improved JSON parsing
     content = response.choices[0].message.content
     try:
         return json.loads(content)["script"]
