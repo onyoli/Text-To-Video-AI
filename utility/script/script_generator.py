@@ -7,7 +7,7 @@ if len(os.environ.get("GROQ_API_KEY")) > 30:
     model = "mixtral-8x7b-32768"
     client = Groq(
         api_key=os.environ.get("GROQ_API_KEY"),
-        )
+    )
 else:
     OPENAI_API_KEY = os.getenv('OPENAI_KEY')
     model = "gpt-4o"
@@ -35,7 +35,7 @@ def generate_script(topic):
 
         Keep it brief, highly interesting, and unique.
 
-        Stictly output the script in a JSON format like below, and only provide a parsable JSON object with the key 'script'.
+        Strictly output the script in a JSON format like below, and only provide a parsable JSON object with the key 'script'.
 
         # Output
         {"script": "Here is the script ..."}
@@ -43,19 +43,21 @@ def generate_script(topic):
     )
 
     response = client.chat.completions.create(
-            model=model,
-            messages=[
-                {"role": "system", "content": prompt},
-                {"role": "user", "content": topic}
-            ]
-        )
+        model=model,
+        messages=[
+            {"role": "system", "content": prompt},
+            {"role": "user", "content": topic}
+        ]
+    )
     content = response.choices[0].message.content
     try:
         script = json.loads(content)["script"]
-    except Exception as e:
+    except json.JSONDecodeError:
+        # Fallback if JSON is malformed
         json_start_index = content.find('{')
         json_end_index = content.rfind('}')
-        print(content)
+        if json_start_index == -1 or json_end_index == -1:
+            raise ValueError("No valid JSON found in the response.")
         content = content[json_start_index:json_end_index+1]
         script = json.loads(content)["script"]
     return script
