@@ -24,7 +24,7 @@ def generate_topic():
     )
     return response.choices[0].message.content.strip()
 
-if __name__ == "__main__":
+async def main():
     # Always generate a topic using AI
     SAMPLE_TOPIC = generate_topic()
     SAMPLE_FILE_NAME = "audio_tts.wav"
@@ -37,7 +37,7 @@ if __name__ == "__main__":
     print("Script:", response)
 
     # Step 2: Generate audio from script
-    asyncio.run(generate_audio(response, SAMPLE_FILE_NAME))
+    await generate_audio(response, SAMPLE_FILE_NAME)
 
     # Step 3: Generate timed captions from audio
     timed_captions = generate_timed_captions(SAMPLE_FILE_NAME)
@@ -64,3 +64,6 @@ if __name__ == "__main__":
         print("Output Video:", video)
     else:
         print("No video generated")
+
+if __name__ == "__main__":
+    asyncio.run(main())
