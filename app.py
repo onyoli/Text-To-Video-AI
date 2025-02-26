@@ -14,12 +14,13 @@ from utility.video.video_search_query_generator import getVideoSearchQueriesTime
 # ✅ Ensure API key is set
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 if not GROQ_API_KEY:
-    raise ValueError("Error: Missing GROQ_API_KEY. Please set your API key in the environment variables.")
+    raise ValueError("❌ Missing GROQ_API_KEY. Please set your API key in the environment variables.")
 
 # ✅ AI-Powered Topic Generator
 def generate_topic():
     print("\n🤖 Generating a viral topic using AI...")
-    client = OpenAI(api_key=GROQ_API_KEY)  # Use OpenAI API for topic generation
+    client = OpenAI(api_key=GROQ_API_KEY)
+    
     prompt = (
         "Generate a highly engaging, viral YouTube topic that sparks curiosity. "
         "It should be emotional, mysterious, or shocking to attract massive views."
@@ -30,7 +31,7 @@ def generate_topic():
 
     if not topic:
         topic = "The Most Mysterious Unsolved Disappearance Ever"  # Fallback topic
-        print("⚠️ Failed to generate topic. Using default:", topic)
+        print("⚠️ AI failed to generate topic. Using default:", topic)
     
     print("🎯 AI-Generated Topic:", topic)
     return topic
