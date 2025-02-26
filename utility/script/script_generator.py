@@ -1,20 +1,19 @@
 import os
-from openai import OpenAI
 import json
+from openai import OpenAI  # Moved to top for clarity
 
-# Initialize client based on environment variables
+# Initialize client outside function to avoid repeated setup
 if len(os.environ.get("GROQ_API_KEY", "")) > 30:
     from groq import Groq
-    model = "mixtral-8x7b-32768"
     client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
+    model = "mixtral-8x7b-32768"
 else:
-    OPENAI_API_KEY = os.getenv("OPENAI_KEY")
+    client = OpenAI(api_key=os.getenv("OPENAI_KEY"))
     model = "gpt-4o"
-    client = OpenAI(api_key=OPENAI_API_KEY)
 
 def generate_script(topic):
-    prompt = """[Your prompt here]"""  # Keep your existing prompt
-
+    prompt = """[Your existing prompt here]"""  # Keep your original prompt
+    
     response = client.chat.completions.create(
         model=model,
         messages=[
@@ -22,13 +21,11 @@ def generate_script(topic):
             {"role": "user", "content": topic}
         ]
     )
+    
+    # Improved JSON parsing
     content = response.choices[0].message.content
     try:
-        script = json.loads(content)["script"]
+        return json.loads(content)["script"]
     except json.JSONDecodeError:
-        json_start = content.find('{')
-        json_end = content.rfind('}')
-        if json_start == -1 or json_end == -1:
-            raise ValueError("No valid JSON found.")
-        script = json.loads(content[json_start:json_end+1])["script"]
-    return script
+        json_str = content[content.find('{'):content.rfind('}')+1]
+        return json.loads(json_str)["script"]
