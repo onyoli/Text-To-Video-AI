@@ -26,28 +26,36 @@ def generate_topic():
     return response.choices[0].message.content.strip()
 
 if __name__ == "__main__":
+    # Set up argument parser
     parser = argparse.ArgumentParser(description="Generate a video from a topic.")
     parser.add_argument("--topic", type=str, help="(Optional) Custom topic for the video", default=None)
     
+    # Parse arguments
     args = parser.parse_args()
+    
+    # Use provided topic or generate one automatically
     SAMPLE_TOPIC = args.topic if args.topic else generate_topic()
     SAMPLE_FILE_NAME = "audio_tts.wav"
     VIDEO_SERVER = "pexel"
 
     print(f"Using Topic: {SAMPLE_TOPIC}")
 
-    # Rest of your pipeline remains unchanged
+    # Step 1: Generate script
     response = generate_script(SAMPLE_TOPIC)
     print("Script:", response)
 
+    # Step 2: Generate audio from script
     asyncio.run(generate_audio(response, SAMPLE_FILE_NAME))
 
+    # Step 3: Generate timed captions from audio
     timed_captions = generate_timed_captions(SAMPLE_FILE_NAME)
     print("Captions:", timed_captions)
 
+    # Step 4: Generate search terms for background videos
     search_terms = getVideoSearchQueriesTimed(response, timed_captions)
     print("Search Terms:", search_terms)
 
+    # Step 5: Fetch background video URLs
     background_video_urls = None
     if search_terms:
         background_video_urls = generate_video_url(search_terms, VIDEO_SERVER)
@@ -55,8 +63,10 @@ if __name__ == "__main__":
     else:
         print("No background video")
 
+    # Step 6: Merge empty intervals in video URLs
     background_video_urls = merge_empty_intervals(background_video_urls)
 
+    # Step 7: Render final video
     if background_video_urls:
         video = get_output_media(SAMPLE_FILE_NAME, timed_captions, background_video_urls, VIDEO_SERVER)
         print("Output Video:", video)
