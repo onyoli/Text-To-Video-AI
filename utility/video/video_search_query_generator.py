@@ -1,8 +1,6 @@
 import sys
 import os
-
-# Add the root directory to the Python path
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
 
 # Debug: Print Python path
 print("Python Path:", sys.path)
